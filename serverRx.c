@@ -102,8 +102,8 @@ void *connection_handler(void *socket_desc) {
         if (mysql_real_connect(con, "localhost", "admin", "adminpass", "alpro", 0, NULL, 0) == NULL) {
             finish_with_error(con);
         }
-        
-        sprintf(query, "SELECT * FROM msg WHERE `Id` = 1;");
+
+        sprintf(query, "SELECT * FROM msg WHERE `Id` = %s;", client_message);
 
         if (mysql_query(con, query))  {
             finish_with_error(con);
@@ -129,7 +129,7 @@ void *connection_handler(void *socket_desc) {
         mysql_free_result(result);
         mysql_close(con);
 
-        write(sock, client_message, strlen(client_message));
+        write(sock, row[0], strlen(client_message));
     }
 
     if(recv_size == 0) {

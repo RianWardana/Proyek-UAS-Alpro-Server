@@ -87,12 +87,10 @@ int main(int argc, char *argv[]) {
  * This will handle connection for each client
  * */
 void *connection_handler(void *socket_desc) {
-        
-
     //Get the socket descriptor
     int sock = *(int*)socket_desc;
     int recv_size;
-    char *message, client_message[16];
+    char client_message[16];
     char *query = malloc(64);
 
     //Receive a message from client
@@ -115,13 +113,15 @@ void *connection_handler(void *socket_desc) {
             finish_with_error(con);
         }
 
+        char *message = malloc(100);
         int num_fields = mysql_num_fields(result);
         MYSQL_ROW row;
 
         int i;
         while ((row = mysql_fetch_row(result))) { 
             for(i = 0; i < num_fields; i++) { 
-                printf("%s ", row[i] ? row[i] : "NULL"); 
+                printf("%s ", row[i] ? row[i] : "NULL");
+                sprintf(message, "%s", row[i]);
             } 
             printf("\n"); 
         }
@@ -129,7 +129,7 @@ void *connection_handler(void *socket_desc) {
         mysql_free_result(result);
         mysql_close(con);
 
-        write(sock, row[0], strlen(client_message));
+        write(sock, message, strlen(message));
     }
 
     if(recv_size == 0) {

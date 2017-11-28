@@ -1,20 +1,32 @@
 #include<stdio.h>
 #include<string.h>
 #include<stdlib.h>
+
+// Untuk server
 #include<sys/socket.h>
 #include<arpa/inet.h>
 #include<unistd.h>
-#include<pthread.h> //for threading , link with lpthread
- 
-//the thread function
+
+// Untuk akses ke database MYSQL
+#include <my_global.h>
+#include <mysql.h>
+
+// Untuk fitur multithreading (-lpthread)
+#include<pthread.h>
 void *connection_handler(void *);
 
-int msgCount = 0;
-int *msgCountPtr = &msgCount;
- 
-int main(int argc , char *argv[]) {
-    int socket_desc , client_sock , c , *new_sock;
-    struct sockaddr_in server , client;
+// int msgCount = 0;
+// int *msgCountPtr = &msgCount;
+
+void finish_with_error(MYSQL *con) {
+    fprintf(stderr, "%s\n", mysql_error(con));
+    mysql_close(con);
+    exit(1);        
+}
+
+int main(int argc, char *argv[]) {
+    int socket_desc, client_sock, c, *new_sock;
+    struct sockaddr_in server, client;
      
     //Create socket
     socket_desc = socket(AF_INET , SOCK_STREAM , 0);
@@ -42,7 +54,6 @@ int main(int argc , char *argv[]) {
     //Accept and incoming connection
     puts("Waiting for incoming connections...");
     c = sizeof(struct sockaddr_in);
-     
      
     //Accept and incoming connection
     puts("Waiting for incoming connections...");
@@ -76,25 +87,57 @@ int main(int argc , char *argv[]) {
  * This will handle connection for each client
  * */
 void *connection_handler(void *socket_desc) {
+    // Koneksi dengan database MYSQL
+    MYSQL *con = mysql_init(NULL);
+    if (mysql_real_connect(con, "localhost", "admin", "adminpass", "alpro", 0, NULL, 0) == NULL) {
+        finish_with_error(con);
+    }
+    
     //Get the socket descriptor
     int sock = *(int*)socket_desc;
-    int read_size;
-    char *message , client_message[2000];
-    char *msgCountS = malloc(8);
+    int recv_size;
+    char *message, client_message[16];
+    char *query = malloc(64);
+    // char *msgCountS = malloc(8);
 
     //Receive a message from client
-    while( (read_size = recv(sock, client_message, 2000, 0)) > 0 ) {
-        sprintf(msgCountS, "%d", *msgCountPtr);
-        FILE *fp;
-        fp = fopen(msgCountS, "w");
+    while( (recv_size = recv(sock, client_message, 16, 0)) > 0 ) {
+        // sprintf(msgCountS, "%d", *msgCountPtr);
+        // FILE *fp;
+        // fp = fopen(msgCountS, "w");
 
-        int i;
-        for (i = 0; i < 100; i++) {
-            fprintf(fp, "%c", client_message[i]);  
+        // int i;
+        // for (i = 0; i < 100; i++) {
+        //     fprintf(fp, "%c", client_message[i]);  
+        // }
+        // fclose(fp);
+        // (*msgCountPtr)++;
+
+        sprintf(query, "SELECT * FROM msg WHERE key=1;")
+
+        if (mysql_query(con, query))  {
+            finish_with_error(con);
         }
-        fclose(fp);
-        
-        (*msgCountPtr)++;
+
+        MYSQL_RES *result = mysql_store_result(con);
+
+        if (result == NULL) {
+            finish_with_error(con);
+        }
+
+        int num_fields = mysql_num_fields(result);
+        MYSQL_ROW row;
+
+        while ((row = mysql_fetch_row(result))) { 
+            for(i = 0; i < num_fields; i++) { 
+                printf("%s ", row[i] ? row[i] : "NULL"); 
+            } 
+            printf("\n"); 
+        }
+
+        mysql_free_result(result);
+        mysql_close(con);
+
         write(sock, client_message, strlen(client_message));
     }
 

@@ -7,7 +7,7 @@ int main(int argc , char *argv[])
 {
     int sock;
     struct sockaddr_in server;
-    char message[1000] , server_reply[2000];
+    char server_reply[2000];
      
     //Create socket
     sock = socket(AF_INET , SOCK_STREAM , 0);
@@ -31,21 +31,19 @@ int main(int argc , char *argv[])
     puts("Connected\n");
      
     //keep communicating with server
-    while(1)
-    {
+    while(1) {
+        char message[1000];
         printf("Enter message : ");
         scanf(" %[^\n]%*c" , message);
          
         //Send some data
-        if( send(sock , message , strlen(message) , 0) < 0)
-        {
+        if( send(sock , message , strlen(message) , 0) < 0) {
             puts("Send failed");
             return 1;
         }
          
         //Receive a reply from the server
-        if( recv(sock , server_reply , 2000 , 0) < 0)
-        {
+        if( recv(sock , server_reply , 2000 , 0) < 0) {
             puts("recv failed");
             break;
         }

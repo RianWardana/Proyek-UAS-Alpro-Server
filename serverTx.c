@@ -92,7 +92,7 @@ void *connection_handler(void *socket_desc) {
         for (i = 0; i < 100; i++) {
             fprintf(fp, "%c", client_message[i]);  
         }
-        fclose(ofp);
+        fclose(fp);
         
         (*msgCountPtr)++;
         write(sock, client_message, strlen(client_message));

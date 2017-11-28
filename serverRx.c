@@ -98,21 +98,9 @@ void *connection_handler(void *socket_desc) {
     int recv_size;
     char *message, client_message[16];
     char *query = malloc(64);
-    // char *msgCountS = malloc(8);
 
     //Receive a message from client
     while( (recv_size = recv(sock, client_message, 16, 0)) > 0 ) {
-        // sprintf(msgCountS, "%d", *msgCountPtr);
-        // FILE *fp;
-        // fp = fopen(msgCountS, "w");
-
-        // int i;
-        // for (i = 0; i < 100; i++) {
-        //     fprintf(fp, "%c", client_message[i]);  
-        // }
-        // fclose(fp);
-        // (*msgCountPtr)++;
-
         sprintf(query, "SELECT * FROM msg WHERE `Id` = 1;");
 
         if (mysql_query(con, query))  {

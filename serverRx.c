@@ -113,7 +113,7 @@ void *connection_handler(void *socket_desc) {
         // fclose(fp);
         // (*msgCountPtr)++;
 
-        sprintf(query, "SELECT * FROM msg WHERE key=1;");
+        sprintf(query, "SELECT * FROM msg WHERE `Id` = 1;");
 
         if (mysql_query(con, query))  {
             finish_with_error(con);

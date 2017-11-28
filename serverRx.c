@@ -103,7 +103,7 @@ void *connection_handler(void *socket_desc) {
             finish_with_error(con);
         }
 
-        sprintf(query, "SELECT * FROM msg WHERE `Id` = %s;", client_message);
+        sprintf(query, "SELECT * FROM msg WHERE `Id` = 1;");
 
         if (mysql_query(con, query))  {
             finish_with_error(con);

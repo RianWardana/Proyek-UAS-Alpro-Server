@@ -92,7 +92,7 @@ void *connection_handler(void *socket_desc) {
     if (mysql_real_connect(con, "localhost", "admin", "adminpass", "alpro", 0, NULL, 0) == NULL) {
         finish_with_error(con);
     }
-    
+
     //Get the socket descriptor
     int sock = *(int*)socket_desc;
     int recv_size;
@@ -113,7 +113,7 @@ void *connection_handler(void *socket_desc) {
         // fclose(fp);
         // (*msgCountPtr)++;
 
-        sprintf(query, "SELECT * FROM msg WHERE key=1;")
+        sprintf(query, "SELECT * FROM msg WHERE key=1;");
 
         if (mysql_query(con, query))  {
             finish_with_error(con);
@@ -128,6 +128,7 @@ void *connection_handler(void *socket_desc) {
         int num_fields = mysql_num_fields(result);
         MYSQL_ROW row;
 
+        int i;
         while ((row = mysql_fetch_row(result))) { 
             for(i = 0; i < num_fields; i++) { 
                 printf("%s ", row[i] ? row[i] : "NULL"); 
@@ -141,12 +142,12 @@ void *connection_handler(void *socket_desc) {
         write(sock, client_message, strlen(client_message));
     }
 
-    if(read_size == 0) {
+    if(recv_size == 0) {
         puts("Client disconnected");
         fflush(stdout);
     }
 
-    else if(read_size == -1) {
+    else if(recv_size == -1) {
         perror("recv failed");
     }
          

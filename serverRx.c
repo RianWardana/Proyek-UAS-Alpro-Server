@@ -54,10 +54,7 @@ int main(int argc, char *argv[]) {
     //Accept and incoming connection
     puts("Waiting for incoming connections...");
     c = sizeof(struct sockaddr_in);
-     
-    //Accept and incoming connection
-    puts("Waiting for incoming connections...");
-    c = sizeof(struct sockaddr_in);
+
     while( (client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c)) ) {
         puts("Connection accepted");
          
@@ -90,6 +87,7 @@ void *connection_handler(void *socket_desc) {
     //Get the socket descriptor
     int sock = *(int*)socket_desc;
     int recv_size;
+    int request;
     char client_message[16];
     char *query = malloc(64);
 
@@ -101,7 +99,7 @@ void *connection_handler(void *socket_desc) {
             finish_with_error(con);
         }
 
-        sprintf(query, "SELECT * FROM msg WHERE `Id` = 1;");
+        sprintf(query, "SELECT `Pesan` FROM msg WHERE `Id` = %d;", atoi(client_message));
 
         if (mysql_query(con, query))  {
             finish_with_error(con);
@@ -120,8 +118,9 @@ void *connection_handler(void *socket_desc) {
         int i;
         while ((row = mysql_fetch_row(result))) { 
             for(i = 0; i < num_fields; i++) { 
-                printf("%s ", row[i] ? row[i] : "NULL");
+                //printf("%s", row[i] ? row[i] : "NULL");
                 sprintf(message, "%s", row[i]);
+		//if (strcmp(message, NULL) != 0) printf("helo");
             } 
             printf("\n"); 
         }
@@ -130,6 +129,8 @@ void *connection_handler(void *socket_desc) {
         mysql_close(con);
 
         write(sock, message, strlen(message));
+	//write(sock, client_message, strlen(client_message));
+	memset(client_message, 0, sizeof(client_message));
     }
 
     if(recv_size == 0) {

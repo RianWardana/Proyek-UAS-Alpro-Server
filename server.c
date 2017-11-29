@@ -5,9 +5,16 @@
 #include<arpa/inet.h> //inet_addr
 #include<unistd.h>    //write
 #include<pthread.h> //for threading , link with lpthread
+
+//// Include MySQL ////
+#include <my_global.h>
+#include <mysql.h>
  
 //the thread function
 void *connection_handler(void *);
+
+//punya mysql
+void finish_with_error(MYSQL *con);
  
 int main(int argc , char *argv[])
 {
@@ -42,11 +49,12 @@ int main(int argc , char *argv[])
     //Accept and incoming connection
     puts("Waiting for incoming connections...");
     c = sizeof(struct sockaddr_in);
-     
-     
+
+	
+    /* 
     //Accept and incoming connection
     puts("Waiting for incoming connections...");
-    c = sizeof(struct sockaddr_in);
+    c = sizeof(struct sockaddr_in); */
     while( (client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c)) )
     {
         puts("Connection accepted");
@@ -63,7 +71,8 @@ int main(int argc , char *argv[])
          
         //Now join the thread , so that we dont terminate before the thread
         //pthread_join( sniffer_thread , NULL);
-        puts("Handler assigned");
+        puts("Handler assigned");  
+	  
     }
      
     if (client_sock < 0)
@@ -84,13 +93,43 @@ void *connection_handler(void *socket_desc)
     int sock = *(int*)socket_desc;
     int read_size;
     char *message , client_message[2000];
+    char verify[]="Pesan diterima";
+    char *query = malloc(64);
+  
+
+	
 
 
     //Receive a message from client
     while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 )
     {
-        //Send the message back to client
-        write(sock , client_message , strlen(client_message));
+	
+	
+	//////// Start of MySQL ///////
+	MYSQL *con = mysql_init(NULL);
+  
+  	if (con == NULL) {
+	      fprintf(stderr, "%s\n", mysql_error(con));
+	      exit(1);
+	}  
+
+	  if (mysql_real_connect(con, "localhost", "admin", "adminpass", 
+		  "alpro", 0, NULL, 0) == NULL) 
+	  {
+	      finish_with_error(con);
+	  }   
+	
+	sprintf(query,"INSERT INTO `msg`(`Pesan`) VALUES(\"%s\")",client_message);
+	if (mysql_query(con, query)) {
+	      finish_with_error(con);
+	  } 
+		
+	memset(client_message, 0, sizeof client_message);
+	  mysql_close(con);    
+
+	//Send the message back to client
+        write(sock , verify , strlen(verify));
+	
     }
 
     if(read_size == 0)
@@ -108,4 +147,11 @@ void *connection_handler(void *socket_desc)
     
 	close(sock);
     return 0;
+}
+
+void finish_with_error(MYSQL *con)
+{
+  fprintf(stderr, "%s\n", mysql_error(con));
+  mysql_close(con);
+  exit(1);        
 }
